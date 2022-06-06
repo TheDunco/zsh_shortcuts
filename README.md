@@ -3,10 +3,10 @@ My zsh shortcuts from work at Tekton
 
 # Instructions
 1. Copy the `.aliases.zshrc` file into your home direcotry (`~/.aliases.zshrc`)
-2. Add `source .aliases.zshrc` into your .zshrc (my .zshrc is provided as an example)
-3. Manually source your .zshrc by typing `source ~/.zshrc` (this is the `reload` command in my alias language)
-4. Now you can use my aliases!
-5. Feel free to change the aliases and experiment as you wish.
+2. Add `source ~/.aliases.zshrc` and `source ~/.branch.zshrc` into your .zshrc (my .zshrc is provided as an example). The `.branch.zshrc` will not exist at first but keeps track of your git brnaches, see **Explantaions** section for more info
+4. Manually source your .zshrc by typing `source ~/.zshrc` (this is the `reload` command in my alias language)
+5. Now you can use my aliases!
+6. Feel free to change the aliases and experiment as you wish.
 
 # Explantions
 - Most git commands are the same minus the "git"
