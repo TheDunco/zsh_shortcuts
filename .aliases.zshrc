@@ -94,6 +94,14 @@ function alltest() {
     cyp-headless
 }
 
+function remove() {
+    echo -e "💰 Removing cached file/folder $1..."
+    git rm -r --cached $1 && \
+    status && \
+    echo -e "${GREEN}➖ Removed ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" || \
+    echo -e "${RED}❌ Could not remove ${BOLD}$1${NC}${NORMAL}"
+}
+
 # Reinstall node_modules and discard changes to package-lock.json
 function renode() {
     echo "🗑  Removing node_modules and package-lock.json..."
@@ -107,7 +115,7 @@ function renode() {
 
 # Save the current git branch for use within these aliases
 alias cb='br | grep "*" | tr -d "* "'
-alias cbre='source ~/.branch.zshrc && echo -e "${PURPLE}🔄 Sourcing ${YELLOW}~/.branch.zshrc${NC}" && br'
+alias cbre='source ~/.branch.zshrc && echo -e "${PURPLE}🔄 Sourcing ${YELLOW}~/.branch.zshrc${NC}"'
 alias cbls='cat ~/.branch.zshrc'
 
 # Auto save current branch to ~/.branch.zshrc
@@ -137,13 +145,38 @@ function fb() {
     featurebranch "$1"
 }
 
+# Switch branch, delet, and reinstall node_modules
 function cho() {
     status && \
     git checkout $1 && \
     cbsave && \
     echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
     renode && \
-    git restore package-lock.json && \
+    restore package-lock.json && \
+    status && \
+    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
+    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+}
+
+# Swith branch and npm i but no node_module reinstall
+function fcho() {
+    status && \
+    git checkout $1 && \
+    cbsave && \
+    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
+    npm i && \
+    restore package-lock.json && \
+    status && \
+    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
+    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+}
+
+# Just switch branches
+function ffcho() {
+    status && \
+    git checkout $1 && \
+    cbsave && \
+    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
     status && \
     echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
     echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
@@ -158,7 +191,6 @@ function chodev() {
 
 function clone() {
     git clone $1
-    status
 }
 
 function add() {
@@ -175,8 +207,27 @@ function proc() {
     process $1
 }
 
+function updatebranch() {
+    echo -e "${CYAN}⬇️ Pulling develop...${NC}"
+    git pull origin develop && \
+    echo -e "${CYAN}🛒 Checking out ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" || \
+    git checkout $FEATURE_BRANCH && \
+    echo -e "${CYAN}Merging ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH ⬅ develop ...${NC}${NORMAL}" && \
+    git merge develop && \
+    echo -e "${GREEN}✅ Successfully updated ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${GREEN}${NORMAL} with develop${NC}" || \
+    echo -e "${RED}❌ Could not merge develop into branch ${NC}"
+}
+
+function softreset() {
+    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
+    git reset --soft HEAD~1 && \
+    status && \
+    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
+    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+}
+
 alias fetch='git fetch origin $FEATURE_BRANCH'
-alias pull='git pull origin $FEATURE_BRANCH'
+alias pull='git pull origin $FEATURE_BRANCH && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$FEATURE_BRANCH${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
 
 # Other non-git commands
 alias commerce='cd /Users/duncanvankeulen/dev/commerce'
