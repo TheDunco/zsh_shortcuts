@@ -56,6 +56,7 @@ function commit() {
     test && \
     type-check && \
     git commit -m "$1" && \
+    cbsave && \
     status && \
     echo -e "${GREEN}✅ Commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
     echo -e "${RED}❌ Commit failed!${NC}"
@@ -66,6 +67,7 @@ function fcommit() {
     test && \
     type-check && \
     git commit -m "$1" && \
+    cbsave && \
     status && \
     push && \
     echo -e "${GREEN}✅ Fast commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
@@ -77,10 +79,25 @@ function acommit() {
     test && \
     type-check && \
     git commit -am "$1" && \
+    cbsave && \
     status && \
     push && \
     echo -e "${GREEN}✅ Add commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
     echo -e "${RED}❌ Add commit failed!${NC}"
+}
+
+# Safe/stepped commit
+function scommit() {
+    test && \
+    type-check && \
+    status && \
+    echo -e "${PURPLE}Everything look ok?${NC}" && \
+    diff && \
+    git commit -am "$1" && \
+    status && \
+    push && \
+    echo -e "${GREEN}✅ Commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
+    echo -e "${RED}❌ Commit failed!${NC}"
 }
 
 function tests() {
@@ -113,6 +130,19 @@ function renode() {
     echo -e "${RED}❌ Node modules ${BOLD}failed${NORMAL} to reinstall!${NC}"
 }
 
+function renode-hard() {
+    echo "🗑  Removing node_modules, .next, and package-lock.json..."
+    rm -rf package-lock.json node_modules/ .next/ && \
+    echo "🌤 Pulling environment" && \
+    npm run pull-env && \
+    echo "☕️ Reinstalling packages..." && \
+    npm i && \
+    echo "📦 Building..." && \
+    npm run build && \
+    echo -e "${GREEN}✅ Hard reinstall successful${NC}" || \
+    echo -e "${RED}❌ Hard reinstall ${BOLD}failed${NORMAL}!${NC}"
+}
+
 # Save the current git branch for use within these aliases
 alias cb='br | grep "*" | tr -d "* "'
 alias cbre='source ~/.branch.zshrc && echo -e "${PURPLE}🔄 Sourcing ${YELLOW}~/.branch.zshrc${NC}"'
@@ -143,6 +173,15 @@ function featurebranch() {
 
 function fb() {
     featurebranch "$1"
+}
+
+function fbdev() {
+    featurebranch "$1" && \
+    cbsave && \
+    echo -e "${GREEN}✅ Feature branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH ${GREEN}successfully created${NORMAL}${NC}" && \
+    dev || \
+    echo -e "${RED}❌ Failed to create feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}"
+    
 }
 
 # Switch branch, delet, and reinstall node_modules
@@ -184,9 +223,9 @@ function ffcho() {
 
 function chodev() {
     cho $1 && \
-    develop && \
-    echo -e "${GREEN}✅ Switched to branch. Running develop ${NC}" || \
-    echo -e "${RED}❌ Could not run develop ${NC}"
+    echo -e "${GREEN}✅ Switched to branch. Running dev ${NC}" && \
+    dev || \
+    echo -e "${RED}❌ Could not checkout/run dev ${NC}"
 }
 
 function clone() {
@@ -226,11 +265,39 @@ function softreset() {
     echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
 }
 
+
 alias fetch='git fetch origin $FEATURE_BRANCH'
 alias pull='git pull origin $FEATURE_BRANCH && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$FEATURE_BRANCH${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
 
+function fixproblems() {
+    fetch && \ 
+    pull && \
+    renode-hard
+}
+
+function tst() {
+    cd '/Users/duncanvankeulen/dev/TST2' && \
+    nvm use 14.17.4
+}
+
+function tstdev() {
+    tst && npm run dev
+}
+
 # Other non-git commands
 alias commerce='cd /Users/duncanvankeulen/dev/commerce'
+alias api='cd /Users/duncanvankeulen/dev/commerce/framework/commerce/api'
+alias endpoints='cd /Users/duncanvankeulen/dev/commerce/framework/commerce/api/endpoints'
+alias ctapi='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/api'
+alias ctendpoints='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/api/endpoints'
+alias mutations='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/utils/mutations'
+alias queries='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/utils/queries'
+alias pint='cd /Users/duncanvankeulen/dev/pint'
+alias ctapps='cd /Users/duncanvankeulen/dev/ct-applications'
+alias terraform='cd /Users/duncanvankeulen/dev/ct-terraform'
+alias npmlib='cd /Users/duncanvankeulen/dev/npm-lib'
+alias personal='cd /Users/duncanvankeulen/dev/personal'
+alias cliscripts='cd /Users/duncanvankeulen/dev/ct-cli-scripts'
 alias clip='pbcopy'
 alias cp='pbcopy'
 alias paste='pbpaste'
@@ -249,6 +316,9 @@ alias editaliases='code ~/.aliases.zshrc'
 
 alias prox='npx localtunnel --port 3000 --subdomain theduncolocaldev'
 alias stat='status'
+alias statsu='status'
+alias stast='status'
 alias ll='ls -Flags'
 
 alias utest='npm test -- -u'
+alias cloudtunnel='cloudflared tunnel --url http://localhost:3000'
