@@ -1,21 +1,27 @@
 {
   "Dynamic console": {
     "prefix": "clog",
-    "body": "console.${1|log,info,error|}('%c[${TM_FILENAME}] ${2:message}', 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}'$4);$0",
+    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${2:message}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}'$4);$0",
     "scope": "javascript,typescript,typescriptreact,javascriptreact",
     "description": "Quick and dynamic console log/info/error snippet"
   },
   "Console Log Colored": {
-    "prefix": "cl",
-    "body": "console.${1|log,info,error|}('%c[${TM_FILENAME}] ${2:message}', 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}'$4);$0",
+    "prefix": "clc",
+    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${2:message}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}'$4);$0",
     "scope": "javascript,typescript,typescriptreact,javascriptreact",
     "description": "Log colored output to the console"
   },
   "Console Log Object Colored": {
     "prefix": "cloc",
-    "body": "console.${1|log,info,error|}('%c[${TM_FILENAME}] ${2:object}', 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}', ${2:object}$4);$0",
+    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${2:object}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}', ${2:object}$4);$0",
     "scope": "javascript,typescript,typescriptreact,javascriptreact",
     "description": "Console log colored object to the console"
+  },
+  "Console Log Colored & Timed": {
+    "prefix": "clt",
+    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${new Date()} ${2:message}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}'$4);$0",
+    "scope": "javascript,typescript,typescriptreact,javascriptreact",
+    "description": "Log colored output to the console"
   },
   "Functional Component Template": {
     "prefix": "fc",
