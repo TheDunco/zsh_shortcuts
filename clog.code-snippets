@@ -13,7 +13,7 @@
   },
   "Console Log Object Colored": {
     "prefix": "cloc",
-    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${2:object}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}', ${2:object}$4);$0",
+    "body": "console.${1|log,info,error,warn|}(`%c[${TM_FILENAME}] ${2:object} :>> ${${2:object}}`, 'color:${3|red,orange,yellow,green,blue,lightblue,purple,magenta,turquoise,white,black,gray|}', ${2:object}$4);$0",
     "scope": "javascript,typescript,typescriptreact,javascriptreact",
     "description": "Console log colored object to the console"
   },

@@ -322,3 +322,5 @@ alias ll='ls -Flags'
 
 alias utest='npm test -- -u'
 alias cloudtunnel='cloudflared tunnel --url http://localhost:3000'
+
+alias t3i='npm uninstall @tektoninc/t3 && npm install ~/dev/npm-lib/packages/t3/tektoninc-t3-*.tgz && dev'
