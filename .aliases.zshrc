@@ -26,16 +26,21 @@ alias br='git branch'
 alias merge='git merge'
 alias rebase='git rebase'
 
-alias type-check='echo -e "${ORANGE}⌨️ ✔️ Running type-check..." && \
+function typecheck() {
+    echo -e "${ORANGE}✔️ Running type-check..." && \
     npm run type-check && \
     echo -e "${GREEN}✅ Type-check ran successfully!${NC}" || \
-    echo -e "${RED}❌ Type-check failed!${NC}"'
+    echo -e "${RED}❌ Type-check failed!${NC}"
+}
+
 alias push='git push --set-upstream origin $FEATURE_BRANCH && status'
 
-alias test='echo -e "${ORANGE}🧪 Running jest tests" && \
+function test() {
+    echo -e "${ORANGE}🧪 Running jest tests" && \
     npm run test && \
     echo -e "${GREEN}✅ Tests ran successfully!${NC}" || \
-    echo -e "${RED}❌ Tests failed!${NC}"'
+    echo -e "${RED}❌ Tests failed!${NC}"
+}
 
 function restore() { 
     git restore $1 && \
@@ -121,11 +126,10 @@ function remove() {
 
 # Reinstall node_modules and discard changes to package-lock.json
 function renode() {
-    echo "🗑  Removing node_modules and package-lock.json..."
-    rm -rf package-lock.json node_modules/ && \
+    echo "🗑  Removing node_modules and package-lock.json and .next..."
+    rm -rf package-lock.json node_modules/ .next && \
     echo "☕️ Reinstalling packages..." && \
     npm i && \
-    restore package-lock.json && \
     echo -e "${GREEN}✅ Successfully reinstalled node_modules!${NC}" || \
     echo -e "${RED}❌ Node modules ${BOLD}failed${NORMAL} to reinstall!${NC}"
 }
@@ -233,6 +237,7 @@ function clone() {
 }
 
 function add() {
+    cbsave
     git add $1
     status
     echo -e "${CYAN}➕ Added ${BOLD}$1${NC}${NORMAL}" || \
@@ -265,6 +270,13 @@ function softreset() {
     echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
 }
 
+function hardreset() {
+    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
+    git reset --hard HEAD~1 && \
+    status && \
+    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
+    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+}
 
 alias fetch='git fetch origin $FEATURE_BRANCH'
 alias pull='git pull origin $FEATURE_BRANCH && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$FEATURE_BRANCH${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
@@ -275,14 +287,20 @@ function fixproblems() {
     renode-hard
 }
 
-function tst() {
-    cd '/Users/duncanvankeulen/dev/TST2' && \
-    nvm use 14.17.4
-}
+# function tst() {
+#     cd /Users/duncanvankeulen/dev/TST2 && \
+#     nvm use 14.17.4
+# }
 
 function tstdev() {
     tst && npm run dev
 }
+
+function fgit() {
+    status && add . && git commit -m $1 && git push && git status
+}
+
+alias uncommit='git reset --soft HEAD~1'
 
 # Other non-git commands
 alias commerce='cd /Users/duncanvankeulen/dev/commerce'
@@ -294,13 +312,14 @@ alias mutations='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/
 alias queries='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/utils/queries'
 alias pint='cd /Users/duncanvankeulen/dev/pint'
 alias ctapps='cd /Users/duncanvankeulen/dev/ct-applications'
-alias terraform='cd /Users/duncanvankeulen/dev/ct-terraform'
+alias cdterraform='cd /Users/duncanvankeulen/dev/ct-terraform'
 alias npmlib='cd /Users/duncanvankeulen/dev/npm-lib'
 alias personal='cd /Users/duncanvankeulen/dev/personal'
 alias cliscripts='cd /Users/duncanvankeulen/dev/ct-cli-scripts'
 alias bdl='cd /Users/duncanvankeulen/dev/tekton-assets/_archive/features/bundles'
 alias devfolder='cd /Users/duncanvankeulen/dev'
 alias shortcuts='cd /Users/duncanvankeulen/dev/personal/zsh_shortcuts'
+alias payload='cd /Users/duncanvankeulen/dev/tekton-cms-payload'
 
 alias clip='pbcopy'
 alias cp='pbcopy'
@@ -315,7 +334,7 @@ alias local-proxy='npm run local-proxy'
 alias loc-prox='npm run local-proxy'
 
 
-alias dev='commerce && echo -e "${ORANGE}Running development server..." && npm run dev'
+alias dev='echo -e "${ORANGE}Running development server..." && npm run dev'
 
 alias addalias='f() { echo "alias" $1 >> ~/.aliases.zshrc && reload };f'
 alias editaliases='code ~/.aliases.zshrc'
