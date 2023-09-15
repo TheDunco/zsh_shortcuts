@@ -9,7 +9,7 @@ nvm use v16.15.1
 
 source ~/.private.zshrc
 source ~/.aliases.zshrc
-source ~/.branch.zshrc
+
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
 fig source

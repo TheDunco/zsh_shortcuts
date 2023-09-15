@@ -18,26 +18,47 @@ NC='\033[0m' # No Color
 BOLD=$(tput bold)
 NORMAL=$(tput sgr0)
 
+# Git
 alias status='echo -e "\t📈\t📊\t📊\t📊\t📉" && git status'
+alias stat='status'
+alias statsu='status'
+alias stast='status'
+alias stuats='status'
+alias stauts='status'
+alias stuats='status'
 alias log='git log'
 alias diff='git diff'
 alias branch='git branch'
-alias br='git branch'
+alias br='branch'
 alias merge='git merge'
 alias rebase='git rebase'
+alias push='git push --set-upstream origin $(cb) && status'
+alias uncommit='git reset --soft HEAD~1'
 
+# PNPM
+alias pn='pnpm'
+alias storefront='pn --filter storefront'
+alias store='storefront'
+alias cms='pn --filter cms'
+
+export PNPM_STORE_PATH="/Users/duncanvankeulen/Library/pnpm/store/v3"
+alias clearpncache='pnpm store prune && rm -rf $PNPM_STORE_PATH && echo -e "${GREEN}✅ Cleared pnpm cache${NC}"'
+
+# Custom functions
 function typecheck() {
     echo -e "${ORANGE}✔️ Running type-check..." && \
-    npm run type-check && \
+    pn type-check && \
     echo -e "${GREEN}✅ Type-check ran successfully!${NC}" || \
     echo -e "${RED}❌ Type-check failed!${NC}"
 }
 
-alias push='git push --set-upstream origin $FEATURE_BRANCH && status'
 
 function test() {
-    echo -e "${ORANGE}🧪 Running jest tests" && \
-    npm run test && \
+    echo -e "${ORANGE}🧪 Running jest tests in storefront" && \
+    store test&& \
+    echo -e "${ORANGE}✔️ Running type-check on individual projects..." && \
+    cms type-check && \
+    storefront type-check && \
     echo -e "${GREEN}✅ Tests ran successfully!${NC}" || \
     echo -e "${RED}❌ Tests failed!${NC}"
 }
@@ -59,9 +80,8 @@ function unstage() {
 # Commit git changes
 function commit() {
     test && \
-    type-check && \
+    store type-check && \
     git commit -m "$1" && \
-    cbsave && \
     status && \
     echo -e "${GREEN}✅ Commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
     echo -e "${RED}❌ Commit failed!${NC}"
@@ -70,9 +90,7 @@ function commit() {
 # Fast commit: commit and push changes
 function fcommit() {
     test && \
-    type-check && \
     git commit -m "$1" && \
-    cbsave && \
     status && \
     push && \
     echo -e "${GREEN}✅ Fast commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
@@ -84,7 +102,6 @@ function acommit() {
     test && \
     type-check && \
     git commit -am "$1" && \
-    cbsave && \
     status && \
     push && \
     echo -e "${GREEN}✅ Add commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
@@ -136,30 +153,22 @@ function renode() {
 
 function renode-hard() {
     echo "🗑  Removing node_modules, .next, and package-lock.json..."
-    rm -rf package-lock.json node_modules/ .next/ && \
+    rm -rf .next/ && \
+    nodeclear && \
     echo "🌤 Pulling environment" && \
-    npm run pull-env && \
+    pn pm run pull-env && \
     echo "☕️ Reinstalling packages..." && \
-    npm i && \
+    pn i && \
     echo "📦 Building..." && \
-    npm run build && \
+    storefront build && \
     echo -e "${GREEN}✅ Hard reinstall successful${NC}" || \
     echo -e "${RED}❌ Hard reinstall ${BOLD}failed${NORMAL}!${NC}"
 }
 
 # Save the current git branch for use within these aliases
-alias cb='br | grep "*" | tr -d "* "'
+alias cb='git rev-parse --abbrev-ref HEAD'
 alias cbre='source ~/.branch.zshrc && echo -e "${PURPLE}🔄 Sourcing ${YELLOW}~/.branch.zshrc${NC}"'
 alias cbls='cat ~/.branch.zshrc'
-
-# Auto save current branch to ~/.branch.zshrc
-function cbsave() {
-    echo -n "export FEATURE_BRANCH=" > ~/.branch.zshrc && \
-    cb >> ~/.branch.zshrc && \
-    cbre && \
-    echo -e "${GREEN}✅ Successfully saved current branch ${LIGHT_BLUE}$FEATURE_BRANCH ${NC}to ${YELLOW}${BOLD}~/.branch.zshrc!${NC}${NORMAL}" || \
-    echo -e "${RED}❌ Failed to save current branch to ${YELLOW}${BOLD}~/.branch.zshrc!${NC}${NORMAL}"
-}
 
 function featurebranch() {
     echo "Checking out develop..." && \
@@ -169,9 +178,8 @@ function featurebranch() {
     echo -e "🆕 ${PURPLE}Creating feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" && \
     git checkout -b "$1" && \
     echo -e "🕊${PURPLE} Saving feature branch to ${YELLOW}${BOLD}~/.branch.zshrc${NC}${NORMAL}..." && \
-    cbsave && \
     status && \
-    echo -e "${GREEN}✅ 🕊 Feature branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH ${GREEN}successfully created${NORMAL}${NC}" || \
+    echo -e "${GREEN}✅ 🕊 Feature branch ${LIGHT_BLUE}${BOLD}$(cb) ${GREEN}successfully created${NORMAL}${NC}" || \
     echo -e "${RED}❌ Failed to create feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}"
 }
 
@@ -181,55 +189,22 @@ function fb() {
 
 function fbdev() {
     featurebranch "$1" && \
-    cbsave && \
-    echo -e "${GREEN}✅ Feature branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH ${GREEN}successfully created${NORMAL}${NC}" && \
+    echo -e "${GREEN}✅ Feature branch ${LIGHT_BLUE}${BOLD}$(cb) ${GREEN}successfully created${NORMAL}${NC}" && \
     dev || \
     echo -e "${RED}❌ Failed to create feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}"
     
 }
 
-# Switch branch, delet, and reinstall node_modules
+# Switch branch and install node_modules 
 function cho() {
     status && \
     git checkout $1 && \
-    cbsave && \
-    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
-    renode && \
-    restore package-lock.json && \
+    pull && \
+    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" && \
+    pn i && \
     status && \
-    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
-    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
-}
-
-# Swith branch and npm i but no node_module reinstall
-function fcho() {
-    status && \
-    git checkout $1 && \
-    cbsave && \
-    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
-    npm i && \
-    restore package-lock.json && \
-    status && \
-    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
-    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
-}
-
-# Just switch branches
-function ffcho() {
-    status && \
-    git checkout $1 && \
-    cbsave && \
-    echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
-    status && \
-    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
-    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
-}
-
-function chodev() {
-    cho $1 && \
-    echo -e "${GREEN}✅ Switched to branch. Running dev ${NC}" && \
-    dev || \
-    echo -e "${RED}❌ Could not checkout/run dev ${NC}"
+    echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}" || \
+    echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}"
 }
 
 function clone() {
@@ -237,7 +212,7 @@ function clone() {
 }
 
 function add() {
-    cbsave
+    pn generate:types;
     git add $1
     status
     echo -e "${CYAN}➕ Added ${BOLD}$1${NC}${NORMAL}" || \
@@ -251,35 +226,40 @@ function proc() {
     process $1
 }
 
+# Can follow with `kill -3 <PID>` to kill process occupying port
+function portls() {
+    lsof -i :$1
+}
+
 function updatebranch() {
     echo -e "${CYAN}⬇️ Pulling develop...${NC}"
     git pull origin develop && \
-    echo -e "${CYAN}🛒 Checking out ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" || \
-    git checkout $FEATURE_BRANCH && \
-    echo -e "${CYAN}Merging ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH ⬅ develop ...${NC}${NORMAL}" && \
-    git merge develop && \
-    echo -e "${GREEN}✅ Successfully updated ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${GREEN}${NORMAL} with develop${NC}" || \
+    echo -e "${CYAN}🛒 Checking out ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" || \
+    git checkout $(cb) && \
+    echo -e "${CYAN}Merging ${LIGHT_BLUE}${BOLD}$(cb) ⬅ develop ...${NC}${NORMAL}" && \
+    git merge origin && \
+    echo -e "${GREEN}✅ Successfully updated ${LIGHT_BLUE}${BOLD}$(cb)${GREEN}${NORMAL} with develop${NC}" || \
     echo -e "${RED}❌ Could not merge develop into branch ${NC}"
 }
 
 function softreset() {
-    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
+    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" && \
     git reset --soft HEAD~1 && \
     status && \
-    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
-    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}" || \
+    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}"
 }
 
 function hardreset() {
-    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NC}${NORMAL}" && \
+    echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" && \
     git reset --hard HEAD~1 && \
     status && \
-    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}" || \
-    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$FEATURE_BRANCH${NORMAL}${NC}"
+    echo -e "${GREEN}✅ Successfully reset to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}" || \
+    echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}"
 }
 
-alias fetch='git fetch origin $FEATURE_BRANCH'
-alias pull='git pull origin $FEATURE_BRANCH && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$FEATURE_BRANCH${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
+alias fetch='git fetch origin $(cb)'
+alias pull='git pull origin $(cb) && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$(cb)${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
 
 function fixproblems() {
     fetch && \ 
@@ -300,52 +280,68 @@ function fgit() {
     status && add . && git commit -m $1 && git push && git status
 }
 
-alias uncommit='git reset --soft HEAD~1'
+alias type-check='typecheck'
 
-# Other non-git commands
+# Clearing node_modules, lockfiles, and caches.
+alias nodeclear='rm -rf node_modules package-lock.json && echo -e "${GREEN}✅ Cleared node_modules and package-lock.json${NC}"'
+
+function clearpackages() {
+    nodeclear && \
+    cd apps/storefront && \
+    nodeclear && \
+    cd ../cms && \
+    nodeclear && \
+    cd ../../ && \
+    rm -rf pnpm-lock.yaml
+    clearpncache
+}
+
+function refreshpackages() {
+    pn clean:workspaces && \
+    pn clean && \
+    pn install
+}
+
+alias cloudtunnel='cloudflared tunnel --url http://localhost:3000'
+alias cmstunnel='cloudflared tunnel --url http://localhost:3002'
+
+# These were for trying to get local mongo to work without docker
+alias mongod='brew services run mongodb-community'
+alias mongod-status='brew services list'
+alias mongod-stop='brew services stop mongodb-community'
+
+# Commerce
 alias commerce='cd /Users/duncanvankeulen/dev/commerce'
-alias api='cd /Users/duncanvankeulen/dev/commerce/framework/commerce/api'
-alias endpoints='cd /Users/duncanvankeulen/dev/commerce/framework/commerce/api/endpoints'
-alias ctapi='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/api'
-alias ctendpoints='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/api/endpoints'
-alias mutations='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/utils/mutations'
-alias queries='cd /Users/duncanvankeulen/dev/commerce/framework/commercetools/utils/queries'
-alias pint='cd /Users/duncanvankeulen/dev/pint'
-alias ctapps='cd /Users/duncanvankeulen/dev/ct-applications'
-alias cdterraform='cd /Users/duncanvankeulen/dev/ct-terraform'
-alias npmlib='cd /Users/duncanvankeulen/dev/npm-lib'
-alias personal='cd /Users/duncanvankeulen/dev/personal'
-alias cliscripts='cd /Users/duncanvankeulen/dev/ct-cli-scripts'
-alias bdl='cd /Users/duncanvankeulen/dev/tekton-assets/_archive/features/bundles'
-alias devfolder='cd /Users/duncanvankeulen/dev'
-alias shortcuts='cd /Users/duncanvankeulen/dev/personal/zsh_shortcuts'
-alias payload='cd /Users/duncanvankeulen/dev/tekton-cms-payload'
 
+# Clipboard (doesn't work super well)
 alias clip='pbcopy'
-alias cp='pbcopy'
+alias copy='pbcopy'
 alias paste='pbpaste'
 alias reload='source ~/.zshrc && echo -e "${PURPLE}🔄 Sourced .zshrc${NC}"'
 alias rl='reload'
 
-alias cyp='npm run cypress'
-alias cyp-headless='npm run cypress:run'
-alias cyp-proxy='npm run local-proxy'
-alias local-proxy='npm run local-proxy'
-alias loc-prox='npm run local-proxy'
-
-
-alias dev='echo -e "${ORANGE}Running development server..." && npm run dev'
-
-alias addalias='f() { echo "alias" $1 >> ~/.aliases.zshrc && reload };f'
-alias editaliases='code ~/.aliases.zshrc'
-
+# Cypress and copying
+alias cyp='pn cypress'
+alias cyp-headless='pn cypress:run'
+alias cyp-proxy='pn cal-proxy'
+alias local-proxy='pn cal-proxy'
+alias loc-prox='pn cal-proxy'
 alias prox='npx localtunnel --port 3000 --subdomain theduncolocaldev'
-alias stat='status'
-alias statsu='status'
-alias stast='status'
+
+
+alias dev='echo -e "${ORANGE}Running development server..." && pn dev'
+
+alias addalias='f() { echo '\nalias "$1"' >> ~/.aliases.zshrc && reload };f'
+alias editaliases='code ~/.aliases.zshrc'
 alias ll='ls -Flags'
 
-alias utest='npm test -- -u'
-alias cloudtunnel='cloudflared tunnel --url http://localhost:3000'
+alias utest='pn test -- -u'
 
-alias t3i='npm uninstall @tektoninc/t3 && npm install ~/dev/npm-lib/packages/t3/tektoninc-t3-*.tgz && dev'
+alias t3i='pn uninstall @tektoninc/t3 && pn install ~/dev/npm-lib/packages/t3/tektoninc-t3-*.tgz && storefront dev'
+alias cmsdeploy='railway link && railway up'
+
+alias prc='gh pr create -B main -d -t "$(git rev-parse --abbrev-ref HEAD): $1" -b "$(cat ./.github/pull_request_template.md)"'
+
+alias devsync='git checkout develop && git pull && git checkout -'
+
+alias nb='git checkout -b $1'
