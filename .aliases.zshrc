@@ -34,12 +34,27 @@ alias merge='git merge'
 alias rebase='git rebase'
 alias push='git push --set-upstream origin $(cb) && status'
 alias uncommit='git reset --soft HEAD~1'
+function checkout() {
+    git checkout $1
+}
+alias chk='checkout' 
+alias fileschanged="git diff --name-only main $(git rev-parse --abbrev-ref HEAD) | grep -o '[^/]*$'"
 
 # PNPM
 alias pn='pnpm'
+alias pnx='pnpm dlx'
 alias storefront='pn --filter storefront'
 alias store='storefront'
+alias admin='pn --filter admin'
+alias server='pn --filter admin-server'
 alias cms='pn --filter cms'
+alias pigeon='pn --filter pigeon'
+alias support='pn --filter support'
+alias aw='pn --filter admin-web'
+alias utils='pn --filter utils'
+alias lintall='time pnpm --parallel -r lint --fix'
+alias lint-inspect='pnpm dlx @eslint/config-inspector@latest'
+alias i="pnpm i && notify 'Installation Finished' 'pnpm'"
 
 export PNPM_STORE_PATH="/Users/duncanvankeulen/Library/pnpm/store/v3"
 alias clearpncache='pnpm store prune && rm -rf $PNPM_STORE_PATH && echo -e "${GREEN}✅ Cleared pnpm cache${NC}"'
@@ -52,15 +67,22 @@ function typecheck() {
     echo -e "${RED}❌ Type-check failed!${NC}"
 }
 
+function branchrm-local() {
+    git branch -D $1 && \
+    echo -e "${GREEN}✅ Deleted local branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" || \
+    echo -e "${RED}❌ Could not delete local branch ${BOLD}$1${NC}${NORMAL}"
+}
 
-function test() {
-    echo -e "${ORANGE}🧪 Running jest tests in storefront" && \
-    store test&& \
-    echo -e "${ORANGE}✔️ Running type-check on individual projects..." && \
-    cms type-check && \
-    storefront type-check && \
-    echo -e "${GREEN}✅ Tests ran successfully!${NC}" || \
-    echo -e "${RED}❌ Tests failed!${NC}"
+function branchrm-remote() {
+    git push origin --delete $1 && \
+    echo -e "${GREEN}✅ Deleted local branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" || \
+    echo -e "${RED}❌ Could not delete local branch ${BOLD}$1${NC}${NORMAL}"
+}
+
+function branchprune() {
+    git fetch --all --prune && \
+    echo -e "${GREEN}✅ Pruned branches${NC}" || \
+    echo -e "${RED}❌ Could not prune branches${NC}"
 }
 
 function restore() { 
@@ -77,19 +99,16 @@ function unstage() {
     echo -e "${RED}❌ Could not unstage ${BOLD}$1${NC}${NORMAL}"
 }
 
-# Commit git changes
+# Commit git changes with message
 function commit() {
-    test && \
-    store type-check && \
     git commit -m "$1" && \
     status && \
     echo -e "${GREEN}✅ Commit successful! Message: ${LIGHT_CYAN}${BOLD}$1${NORMAL}${NC}" || \
     echo -e "${RED}❌ Commit failed!${NC}"
 }
 
-# Fast commit: commit and push changes
+# Fast commit: commit and push changes with message
 function fcommit() {
-    test && \
     git commit -m "$1" && \
     status && \
     push && \
@@ -97,10 +116,18 @@ function fcommit() {
     echo -e "${RED}❌ Fast commit failed!${NC}"
 }
 
-# Add, commit, and push changes
+function mcomm() {
+  fcommit $@
+}
+
+alias lintr='pn -r lint --fix'
+
+function lcomm() {
+  add . && lintr && add . && fcommit $@
+}
+
+# Add, commit, and push changes with message
 function acommit() {
-    test && \
-    type-check && \
     git commit -am "$1" && \
     status && \
     push && \
@@ -108,9 +135,8 @@ function acommit() {
     echo -e "${RED}❌ Add commit failed!${NC}"
 }
 
-# Safe/stepped commit
+# Safe/stepped commit with message
 function scommit() {
-    test && \
     type-check && \
     status && \
     echo -e "${PURPLE}Everything look ok?${NC}" && \
@@ -122,97 +148,19 @@ function scommit() {
     echo -e "${RED}❌ Commit failed!${NC}"
 }
 
-function tests() {
-    test && \
-    type-check
-}
-
-function alltest() {
-    test
-    type-check
-    cyp-headless
-}
-
-function remove() {
-    echo -e "💰 Removing cached file/folder $1..."
-    git rm -r --cached $1 && \
-    status && \
-    echo -e "${GREEN}➖ Removed ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" || \
-    echo -e "${RED}❌ Could not remove ${BOLD}$1${NC}${NORMAL}"
-}
-
-# Reinstall node_modules and discard changes to package-lock.json
-function renode() {
-    echo "🗑  Removing node_modules and package-lock.json and .next..."
-    rm -rf package-lock.json node_modules/ .next && \
-    echo "☕️ Reinstalling packages..." && \
-    npm i && \
-    echo -e "${GREEN}✅ Successfully reinstalled node_modules!${NC}" || \
-    echo -e "${RED}❌ Node modules ${BOLD}failed${NORMAL} to reinstall!${NC}"
-}
-
-function renode-hard() {
-    echo "🗑  Removing node_modules, .next, and package-lock.json..."
-    rm -rf .next/ && \
-    nodeclear && \
-    echo "🌤 Pulling environment" && \
-    pn pm run pull-env && \
-    echo "☕️ Reinstalling packages..." && \
-    pn i && \
-    echo "📦 Building..." && \
-    storefront build && \
-    echo -e "${GREEN}✅ Hard reinstall successful${NC}" || \
-    echo -e "${RED}❌ Hard reinstall ${BOLD}failed${NORMAL}!${NC}"
-}
-
 # Save the current git branch for use within these aliases
 alias cb='git rev-parse --abbrev-ref HEAD'
-alias cbre='source ~/.branch.zshrc && echo -e "${PURPLE}🔄 Sourcing ${YELLOW}~/.branch.zshrc${NC}"'
-alias cbls='cat ~/.branch.zshrc'
 
-function featurebranch() {
-    echo "Checking out develop..." && \
-    git checkout develop && \
-    echo -e "⬇️ ${PURPLE}Pulling develop${NC}" && \
-    git pull && \
-    echo -e "🆕 ${PURPLE}Creating feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}" && \
-    git checkout -b "$1" && \
-    echo -e "🕊${PURPLE} Saving feature branch to ${YELLOW}${BOLD}~/.branch.zshrc${NC}${NORMAL}..." && \
-    status && \
-    echo -e "${GREEN}✅ 🕊 Feature branch ${LIGHT_BLUE}${BOLD}$(cb) ${GREEN}successfully created${NORMAL}${NC}" || \
-    echo -e "${RED}❌ Failed to create feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}"
-}
-
-function fb() {
-    featurebranch "$1"
-}
-
-function fbdev() {
-    featurebranch "$1" && \
-    echo -e "${GREEN}✅ Feature branch ${LIGHT_BLUE}${BOLD}$(cb) ${GREEN}successfully created${NORMAL}${NC}" && \
-    dev || \
-    echo -e "${RED}❌ Failed to create feature branch ${LIGHT_BLUE}${BOLD}$1${NC}${NORMAL}"
-    
-}
-
-# Switch branch and install node_modules 
 function cho() {
     status && \
-    git checkout $1 && \
-    pull && \
+    git checkout $@ && \
     echo -e "🕊 Switched to branch ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" && \
-    pn i && \
     status && \
     echo -e "${GREEN}✅ Successfully switched to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}" || \
     echo -e "${REG}❌ Could not switch to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}"
 }
 
-function clone() {
-    git clone $1
-}
-
 function add() {
-    pn generate:types;
     git add $1
     status
     echo -e "${CYAN}➕ Added ${BOLD}$1${NC}${NORMAL}" || \
@@ -231,17 +179,6 @@ function portls() {
     lsof -i :$1
 }
 
-function updatebranch() {
-    echo -e "${CYAN}⬇️ Pulling develop...${NC}"
-    git pull origin develop && \
-    echo -e "${CYAN}🛒 Checking out ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" || \
-    git checkout $(cb) && \
-    echo -e "${CYAN}Merging ${LIGHT_BLUE}${BOLD}$(cb) ⬅ develop ...${NC}${NORMAL}" && \
-    git merge origin && \
-    echo -e "${GREEN}✅ Successfully updated ${LIGHT_BLUE}${BOLD}$(cb)${GREEN}${NORMAL} with develop${NC}" || \
-    echo -e "${RED}❌ Could not merge develop into branch ${NC}"
-}
-
 function softreset() {
     echo -e "${CYAN}🔄 Resetting to ${LIGHT_BLUE}${BOLD}$(cb)${NC}${NORMAL}" && \
     git reset --soft HEAD~1 && \
@@ -258,49 +195,17 @@ function hardreset() {
     echo -e "${RED}❌ Could not reset to ${LIGHT_BLUE}${BOLD}$(cb)${NORMAL}${NC}"
 }
 
-alias fetch='git fetch origin $(cb)'
+alias fetch='git fetch'
 alias pull='git pull origin $(cb) && echo -e "${GREEN}⬇️ Pulled ${LIGHT_BLUE}$(cb)${NC}" || echo -e "${RED}❌ Could not pull ${NC}"'
 
-function fixproblems() {
-    fetch && \ 
-    pull && \
-    renode-hard
-}
-
-# function tst() {
-#     cd /Users/duncanvankeulen/dev/TST2 && \
-#     nvm use 14.17.4
-# }
-
-function tstdev() {
-    tst && npm run dev
-}
-
-function fgit() {
-    status && add . && git commit -m $1 && git push && git status
+function fpush() {
+    status && add . && git commit -m $1 && git push && status
 }
 
 alias type-check='typecheck'
 
 # Clearing node_modules, lockfiles, and caches.
 alias nodeclear='rm -rf node_modules package-lock.json && echo -e "${GREEN}✅ Cleared node_modules and package-lock.json${NC}"'
-
-function clearpackages() {
-    nodeclear && \
-    cd apps/storefront && \
-    nodeclear && \
-    cd ../cms && \
-    nodeclear && \
-    cd ../../ && \
-    rm -rf pnpm-lock.yaml
-    clearpncache
-}
-
-function refreshpackages() {
-    pn clean:workspaces && \
-    pn clean && \
-    pn install
-}
 
 alias cloudtunnel='cloudflared tunnel --url http://localhost:3000'
 alias cmstunnel='cloudflared tunnel --url http://localhost:3002'
@@ -310,15 +215,17 @@ alias mongod='brew services run mongodb-community'
 alias mongod-status='brew services list'
 alias mongod-stop='brew services stop mongodb-community'
 
-# Commerce
-alias commerce='cd /Users/duncanvankeulen/dev/commerce'
-
 # Clipboard (doesn't work super well)
 alias clip='pbcopy'
 alias copy='pbcopy'
 alias paste='pbpaste'
 alias reload='source ~/.zshrc && echo -e "${PURPLE}🔄 Sourced .zshrc${NC}"'
 alias rl='reload'
+
+# Quick file finding and zipping
+alias f='fzf | tr -d "\n\r[:blank:]" | copy'
+alias zp='cd $(dirname $(paste) ) && pwd'
+alias zpnv='nvim $(paste)'
 
 # Cypress and copying
 alias cyp='pn cypress'
@@ -328,20 +235,60 @@ alias local-proxy='pn cal-proxy'
 alias loc-prox='pn cal-proxy'
 alias prox='npx localtunnel --port 3000 --subdomain theduncolocaldev'
 
-
 alias dev='echo -e "${ORANGE}Running development server..." && pn dev'
 
 alias addalias='f() { echo '\nalias "$1"' >> ~/.aliases.zshrc && reload };f'
-alias editaliases='code ~/.aliases.zshrc'
+alias editaliases='nvim ~/.aliases.zshrc'
 alias ll='ls -Flags'
 
 alias utest='pn test -- -u'
 
-alias t3i='pn uninstall @tektoninc/t3 && pn install ~/dev/npm-lib/packages/t3/tektoninc-t3-*.tgz && storefront dev'
-alias cmsdeploy='railway link && railway up'
-
-alias prc='gh pr create -B main -d -t "$(git rev-parse --abbrev-ref HEAD): $1" -b "$(cat ./.github/pull_request_template.md)"'
-
-alias devsync='git checkout develop && git pull && git checkout -'
+function prc() {
+    # gh pr create -B main -d -t "$(git rev-parse --abbrev-ref HEAD): $1" -b "$(cat /Users/duncanvankeulen/dev/commerce/.github/pull_request_template.md)"
+    gh pr create -B main -d -t "$1" -b "$(cat /Users/duncanvankeulen/dev/commerce/.github/pull_request_template.md)"
+}
 
 alias nb='git checkout -b $1'
+
+alias vim='nvim'
+
+alias adbrev='adb devices && adb -s emulator-5554 reverse tcp:4242 tcp:4242 && adb reverse --list'
+
+alias rw='pn railway'
+
+alias rebuildtypes='pn --filter types prepare'
+alias rbtypes='rebuildtypes'
+
+alias kittyconfig='nvim ~/.config/kitty/kitty.conf'
+alias kittyconf='kittyconfig'
+alias ghosttyconf='nvim ~/Library/Application\ Support/com.mitchellh.ghostty/config'
+alias kittyshortcuts='nvim ~/.config/kitty/shortcuts.md'
+alias icat="kitten icat"
+
+alias lspconfig='nvim ~/.config/nvim/lua/configs/lspconfig.lua'
+
+alias nv='node --version'
+
+function imgcat() {
+  kitten icat https://images.tekton.com/$1
+}
+
+function publishall() {
+  z cli-scripts && pn run-ts commercetools/publish-staged-products.ts $@ && z -
+}
+
+function nvimconfig() {
+  z ~/.config/nvim && nvim && z -
+}
+
+alias nvconf='nvimconfig'
+
+alias 2='clear'
+alias v='z commerce && nvim'
+
+function notify() {
+  osascript -e 'on run argv
+    display notification (item 1 of argv) with title (item 2 of argv)
+  end run' "$@"
+}
+alias pig-deploy-ct="pigeon cdk deploy Commercetools -e && notify 'Deploy Complete' 'Pigeon'"

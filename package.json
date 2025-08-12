@@ -1,0 +1,19 @@
+{
+  "name": "zsh_shortcuts_snippets",
+  "engines": {
+    "vscode": "^1.11.0"
+  },
+  "contributes": {
+    "snippets": [
+      {
+        "path": "./clog.json",
+        "language": [
+          "javascript",
+          "typescript",
+          "typescriptreact",
+          "javascriptreact"
+        ]
+      }
+    ]
+  }
+}
